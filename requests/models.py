@@ -8,41 +8,35 @@ This module contains the primary objects that power Requests.
 """
 
 import datetime
-import sys
-
 # Import encoding now, to avoid implicit import later.
 # Implicit import within threads may cause LookupError when standard library is in a ZIP,
 # such as in Embedded Python. See https://github.com/psf/requests/issues/3578.
-import encodings.idna
+from email.parser import Parser
+from io import UnsupportedOperation, BytesIO, StringIO
 
+from urllib3.exceptions import (
+    LocationParseError)
 from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 from urllib3.util import parse_url
-from urllib3.exceptions import (
-    DecodeError, ReadTimeoutError, ProtocolError, LocationParseError)
 
-from io import UnsupportedOperation
-from .hooks import default_hooks
-from .structures import CaseInsensitiveDict
-
-from .auth import HTTPBasicAuth
-from .cookies import cookiejar_from_dict, get_cookie_header, _copy_cookie_jar
-from .exceptions import (
-    HTTPError, MissingSchema, InvalidURL, ChunkedEncodingError,
-    ContentDecodingError, ConnectionError, StreamConsumedError,
-    InvalidJSONError)
-from .exceptions import JSONDecodeError as RequestsJSONDecodeError
 from ._internal_utils import to_native_string, unicode_is_ascii
-from .utils import (
-    guess_filename, get_auth_from_url, requote_uri,
-    stream_decode_response_unicode, to_key_val_list, parse_header_links,
-    iter_slices, guess_json_utf, super_len, check_header_validity)
+from .auth import HTTPBasicAuth
 from .compat import (
     Callable, Mapping,
     cookielib, urlunparse, urlsplit, urlencode, str, bytes,
-    is_py2, chardet, builtin_str, basestring, JSONDecodeError)
+    is_py2, chardet, builtin_str, basestring)
 from .compat import json as complexjson
+from .cookies import cookiejar_from_dict, get_cookie_header, _copy_cookie_jar
+from .exceptions import (
+    HTTPError, MissingSchema, InvalidURL, InvalidJSONError)
+from .hooks import default_hooks
 from .status_codes import codes
+from .structures import CaseInsensitiveDict
+from .utils import (
+    guess_filename, get_auth_from_url, requote_uri,
+    to_key_val_list, parse_header_links,
+    super_len, check_header_validity)
 
 #: The set of HTTP status codes that indicate an automatically
 #: processable redirect.
@@ -603,23 +597,17 @@ class Response(object):
         'encoding', 'reason', 'cookies', 'elapsed', 'request'
     ]
 
-    def __init__(self):
+    def __init__(self, request):
+        if request.responseType == 'blob':
+            self.raw = BytesIO(bytes(request.response.arrayBuffer().result().to_py()))
+        else:
+            self.text = str(request.response)
+            self.raw = StringIO(str(request.response))
+        self.status_code = request.status
+        self.headers = CaseInsensitiveDict(Parser().parsestr(request.getAllResponseHeaders(), headersonly=True))
         self._content = False
         self._content_consumed = False
         self._next = None
-
-        #: Integer Code of responded HTTP Status, e.g. 404 or 200.
-        self.status_code = None
-
-        #: Case-insensitive Dictionary of Response Headers.
-        #: For example, ``headers['content-encoding']`` will return the
-        #: value of a ``'Content-Encoding'`` response header.
-        self.headers = CaseInsensitiveDict()
-
-        #: File-like object representation of response (for advanced usage).
-        #: Use of ``raw`` requires that ``stream=True`` be set on the request.
-        #: This requirement does not apply for use internally to Requests.
-        self.raw = None
 
         #: Final URL location of Response.
         self.url = None
@@ -737,59 +725,7 @@ class Response(object):
         return chardet.detect(self.content)['encoding']
 
     def iter_content(self, chunk_size=1, decode_unicode=False):
-        """Iterates over the response data.  When stream=True is set on the
-        request, this avoids reading the content at once into memory for
-        large responses.  The chunk size is the number of bytes it should
-        read into memory.  This is not necessarily the length of each item
-        returned as decoding can take place.
-
-        chunk_size must be of type int or None. A value of None will
-        function differently depending on the value of `stream`.
-        stream=True will read data as it arrives in whatever size the
-        chunks are received. If stream=False, data is returned as
-        a single chunk.
-
-        If decode_unicode is True, content will be decoded using the best
-        available encoding based on the response.
-        """
-
-        def generate():
-            # Special case for urllib3.
-            if hasattr(self.raw, 'stream'):
-                try:
-                    for chunk in self.raw.stream(chunk_size, decode_content=True):
-                        yield chunk
-                except ProtocolError as e:
-                    raise ChunkedEncodingError(e)
-                except DecodeError as e:
-                    raise ContentDecodingError(e)
-                except ReadTimeoutError as e:
-                    raise ConnectionError(e)
-            else:
-                # Standard file-like object.
-                while True:
-                    chunk = self.raw.read(chunk_size)
-                    if not chunk:
-                        break
-                    yield chunk
-
-            self._content_consumed = True
-
-        if self._content_consumed and isinstance(self._content, bool):
-            raise StreamConsumedError()
-        elif chunk_size is not None and not isinstance(chunk_size, int):
-            raise TypeError("chunk_size must be an int, it is instead a %s." % type(chunk_size))
-        # simulate reading small chunks of the content
-        reused_chunks = iter_slices(self._content, chunk_size)
-
-        stream_chunks = generate()
-
-        chunks = reused_chunks if self._content_consumed else stream_chunks
-
-        if decode_unicode:
-            chunks = stream_decode_response_unicode(chunks, self)
-
-        return chunks
+        yield self.raw
 
     def iter_lines(self, chunk_size=ITER_CHUNK_SIZE, decode_unicode=False, delimiter=None):
         """Iterates over the response data, one line at a time.  When
@@ -842,44 +778,6 @@ class Response(object):
         # since we exhausted the data.
         return self._content
 
-    @property
-    def text(self):
-        """Content of the response, in unicode.
-
-        If Response.encoding is None, encoding will be guessed using
-        ``charset_normalizer`` or ``chardet``.
-
-        The encoding of the response content is determined based solely on HTTP
-        headers, following RFC 2616 to the letter. If you can take advantage of
-        non-HTTP knowledge to make a better guess at the encoding, you should
-        set ``r.encoding`` appropriately before accessing this property.
-        """
-
-        # Try charset from content-type
-        content = None
-        encoding = self.encoding
-
-        if not self.content:
-            return str('')
-
-        # Fallback to auto-detected encoding.
-        if self.encoding is None:
-            encoding = self.apparent_encoding
-
-        # Decode unicode from given encoding.
-        try:
-            content = str(self.content, encoding, errors='replace')
-        except (LookupError, TypeError):
-            # A LookupError is raised if the encoding was not found which could
-            # indicate a misspelling or similar mistake.
-            #
-            # A TypeError can be raised if encoding is None
-            #
-            # So we try blindly encoding.
-            content = str(self.content, errors='replace')
-
-        return content
-
     def json(self, **kwargs):
         r"""Returns the json-encoded content of a response, if any.
 
@@ -887,34 +785,7 @@ class Response(object):
         :raises requests.exceptions.JSONDecodeError: If the response body does not
             contain valid json.
         """
-
-        if not self.encoding and self.content and len(self.content) > 3:
-            # No encoding set. JSON RFC 4627 section 3 states we should expect
-            # UTF-8, -16 or -32. Detect which one to use; If the detection or
-            # decoding fails, fall back to `self.text` (using charset_normalizer to make
-            # a best guess).
-            encoding = guess_json_utf(self.content)
-            if encoding is not None:
-                try:
-                    return complexjson.loads(
-                        self.content.decode(encoding), **kwargs
-                    )
-                except UnicodeDecodeError:
-                    # Wrong UTF codec detected; usually because it's not UTF-8
-                    # but some other 8-bit codec.  This is an RFC violation,
-                    # and the server didn't bother to tell us what codec *was*
-                    # used.
-                    pass
-
-        try:
-            return complexjson.loads(self.text, **kwargs)
-        except JSONDecodeError as e:
-            # Catch JSON-related errors and raise as requests.JSONDecodeError
-            # This aliases json.JSONDecodeError and simplejson.JSONDecodeError
-            if is_py2: # e is a ValueError
-                raise RequestsJSONDecodeError(e.message)
-            else:
-                raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+        return complexjson.loads(self.text)
 
     @property
     def links(self):
