@@ -11,6 +11,7 @@ import json as json_module
 import os
 import sys
 import time
+import warnings
 from collections import OrderedDict
 from datetime import timedelta
 from urllib.parse import urlencode
@@ -421,7 +422,6 @@ class Session:
             If Tuple, ('cert', 'key') pair.
         :rtype: requests.Response
         """
-        # Create the Request.
         request = XMLHttpRequest.new()
         request.open(method.upper(), url, False)
         if params:
@@ -429,8 +429,6 @@ class Session:
                 url = url + '?' + urlencode(params)
         if headers:
             self.set_headers(request, headers)
-        if cookies:
-            ...  # TODO set the cookie in the browser, otherwise we rely on the cookies the browser decides to send
         if stream:
             request.responseType = "blob"
         if data:
@@ -441,7 +439,7 @@ class Session:
                 request.setRequestHeader('Content-Type', 'application/json')
                 request.send(data)
             else:
-                ...
+                warnings.warn('This type of input to the json parameter of Pyodide requests is not supported')
         if json:
             if isinstance(json, Mapping):
                 data = Blob.new([json_module.dumps(json)], {
@@ -450,7 +448,10 @@ class Session:
                 request.setRequestHeader('Content-Type', 'application/json')
                 request.send(data)
             else:
-                ...
+                warnings.warn('This type of input to the json parameter of Pyodide requests is not supported')
+        if verify is not None or cert or not allow_redirects or proxies or auth or hooks or files or cookies:
+            warnings.warn('The Pyodide version of requests does not support the following parameters (yet): '
+                          'verify, cert, allow_redirects, proxies, auth, hooks, files and cookies')
         else:
             request.send()
         return Response(request)
