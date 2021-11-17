@@ -33,7 +33,7 @@ from .utils import (
     requote_uri, get_environ_proxies, get_netrc_auth, should_bypass_proxies,
     get_auth_from_url, rewind_body
 )
-from .utils import to_key_val_list, DEFAULT_PORTS, set_headers
+from .utils import to_key_val_list, DEFAULT_PORTS
 
 # formerly defined here, reexposed here for backward compatibility
 
