@@ -368,6 +368,14 @@ class Session:
     def __exit__(self, *args):
         ...
 
+    def set_headers(self, request, headers):
+        assert isinstance(headers, Mapping)
+        for header, value in self.headers.items():
+            request.setRequestHeader(header, value)
+        for header, value in headers.items():
+            request.setRequestHeader(header, value)
+        return request
+
     def request(self, method, url,
             params=None, data=None, headers=None, cookies=None, files=None,
             auth=None, timeout=None, allow_redirects=True, proxies=None,
@@ -420,7 +428,7 @@ class Session:
             if isinstance(params, Mapping):
                 url = url + '?' + urlencode(params)
         if headers:
-            set_headers(request, headers)
+            self.set_headers(request, headers)
         if cookies:
             ...  # TODO set the cookie in the browser, otherwise we rely on the cookies the browser decides to send
         if stream:
