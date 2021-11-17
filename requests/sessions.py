@@ -370,11 +370,11 @@ class Session:
         ...
 
     def set_headers(self, request, headers):
-        assert isinstance(headers, Mapping)
         for header, value in self.headers.items():
             request.setRequestHeader(header, value)
-        for header, value in headers.items():
-            request.setRequestHeader(header, value)
+        if isinstance(headers, Mapping):
+            for header, value in headers.items():
+                request.setRequestHeader(header, value)
         return request
 
     def request(self, method, url,
@@ -427,8 +427,7 @@ class Session:
         if params:
             if isinstance(params, Mapping):
                 url = url + '?' + urlencode(params)
-        if headers:
-            self.set_headers(request, headers)
+        self.set_headers(request, headers)
         if stream:
             request.responseType = "blob"
         if data:
