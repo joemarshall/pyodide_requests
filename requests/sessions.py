@@ -423,6 +423,8 @@ class Session:
         :rtype: requests.Response
         """
         request = XMLHttpRequest.new()
+        # Send cookies that might be set in the browser already
+        request.withCredentials = True
         request.open(method.upper(), url, False)
         if params:
             if isinstance(params, Mapping):
