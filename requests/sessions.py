@@ -422,6 +422,7 @@ class Session:
             If Tuple, ('cert', 'key') pair.
         :rtype: requests.Response
         """
+        header_set_to_json = False
         request = XMLHttpRequest.new()
         # Send cookies that might be set in the browser already
         request.withCredentials = True
@@ -438,21 +439,23 @@ class Session:
                     'type': 'application/json',
                 })
                 request.setRequestHeader('Content-Type', 'application/json')
-                request.send(data)
+                header_set_to_json = True
             else:
-                warnings.warn('This type of input to the json parameter of Pyodide requests is not supported')
+                warnings.warn('This type of input to the data parameter of Pyodide requests is not (yet) supported')
         if json:
             if isinstance(json, Mapping):
                 data = Blob.new([json_module.dumps(json)], {
                     'type': 'application/json',
                 })
-                request.setRequestHeader('Content-Type', 'application/json')
-                request.send(data)
+                if not header_set_to_json:
+                    request.setRequestHeader('Content-Type', 'application/json')
             else:
-                warnings.warn('This type of input to the json parameter of Pyodide requests is not supported')
+                warnings.warn('This type of input to the json parameter of Pyodide requests is not (yet) supported')
         if verify is not None or cert or not allow_redirects or proxies or auth or hooks or files or cookies:
             warnings.warn('The Pyodide version of requests does not support the following parameters (yet): '
                           'verify, cert, allow_redirects, proxies, auth, hooks, files and cookies')
+        if data:
+            request.send(data)
         else:
             request.send()
         return Response(request)
