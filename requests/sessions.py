@@ -16,7 +16,12 @@ from collections import OrderedDict, Iterable
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from js import Blob, XMLHttpRequest
+from js import XMLHttpRequest
+
+try:
+    from js import Blob
+except:
+    from js.buffer import Blob
 
 from ._internal_utils import to_native_string
 from .auth import _basic_auth_str
@@ -434,7 +439,7 @@ class Session:
                 url = url + '?' + urlencode(params)
         self.set_headers(request, headers)
         if stream:
-            request.responseType = "blob"
+            request.responseType = "arraybuffer"
         if data:
             if isinstance(data, Mapping):
                 data = Blob.new([json_module.dumps(data)], {

@@ -599,8 +599,8 @@ class Response(object):
     ]
 
     def __init__(self, request):
-        if request.responseType == 'blob':
-            self.raw = BytesIO(bytes(request.response.arrayBuffer().result().to_py()))
+        if request.responseType == 'arraybuffer':
+            self.raw = BytesIO(bytes(request.response.result().to_py()))
         else:
             self.text = str(request.response)
             self.raw = StringIO(str(request.response))
