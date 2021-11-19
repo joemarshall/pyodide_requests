@@ -12,7 +12,7 @@ import os
 import sys
 import time
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 from datetime import timedelta
 from urllib.parse import urlencode
 
@@ -374,6 +374,9 @@ class Session:
             request.setRequestHeader(header, value)
         if isinstance(headers, Mapping):
             for header, value in headers.items():
+                request.setRequestHeader(header, value)
+        if isinstance(headers, Iterable):
+            for header, value in headers:
                 request.setRequestHeader(header, value)
         return request
 
