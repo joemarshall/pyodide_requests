@@ -344,7 +344,7 @@ class Session:
     """
     __attrs__ = [
         'headers', 'cookies', 'auth', 'proxies', 'hooks', 'params', 'verify',
-        'cert', 'prefetch', 'adapters', 'stream', 'trust_env',
+        'cert', 'adapters', 'stream', 'trust_env',
         'max_redirects',
     ]
 
