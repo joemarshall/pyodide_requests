@@ -606,6 +606,8 @@ class Response(object):
             self.raw = StringIO(str(request.response))
         self.status_code = request.status
         self.headers = CaseInsensitiveDict(Parser().parsestr(request.getAllResponseHeaders(), headersonly=True))
+        if 'transfer-encoding' in self.headers:
+            del self.headers['transfer-encoding']
         self._content = False
         self._content_consumed = False
         self._next = None
