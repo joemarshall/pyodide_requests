@@ -599,11 +599,19 @@ class Response(object):
     ]
 
     def __init__(self, request):
-        if request.responseType == 'arraybuffer':
-            self.raw = BytesIO(bytes(request.response.result().to_py()))
+        if request.responseIsBinary:
+            self.raw = bytes(eval(
+                "function str2ab(str) { "
+                "  var buf = new ArrayBuffer(str.length); "
+                "  var bufView = new Uint8Array(buf); "
+                "  for (var i=0, strLen=str.length; i < strLen; i++) { "
+                "    bufView[i] = str.charCodeAt(i); "
+                "  } "
+                "  return buf; "
+                "}; str2ab(request.response);"
+            ))
         else:
             self.text = str(request.response)
-            self.raw = StringIO(str(request.response))
         self.status_code = request.status
         self.headers = CaseInsensitiveDict(Parser().parsestr(request.getAllResponseHeaders(), headersonly=True))
         if 'transfer-encoding' in self.headers:

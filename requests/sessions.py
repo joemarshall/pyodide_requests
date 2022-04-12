@@ -16,7 +16,7 @@ from collections import OrderedDict, Iterable
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from js import XMLHttpRequest
+from js import XMLHttpRequest, eval
 
 try:
     from js import Blob
@@ -431,6 +431,9 @@ class Session:
         :rtype: requests.Response
         """
         request = XMLHttpRequest.new()
+        if stream:
+            request.overrideMimeType('text/plain; charset=x-user-defined')
+            request.responseIsBinary = True
         # Send cookies that might be set in the browser already
         request.withCredentials = True
         request.open(method.upper(), url, False)
@@ -438,8 +441,6 @@ class Session:
             if isinstance(params, Mapping):
                 url = url + '?' + urlencode(params)
         self.set_headers(request, headers)
-        if stream:
-            request.responseType = "arraybuffer"
         if data:
             if isinstance(data, Mapping):
                 data = Blob.new([json_module.dumps(data)], {
