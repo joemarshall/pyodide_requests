@@ -380,11 +380,12 @@ class Session:
         if isinstance(headers, Mapping):
             for header, value in headers.items():
                 request.setRequestHeader(header, value)
-            return request
+            return CaseInsensitiveDict(headers)
         if isinstance(headers, Iterable):
             for header, value in headers:
                 request.setRequestHeader(header, value)
-            return request
+            return CaseInsensitiveDict(headers)
+        return CaseInsensitiveDict({})
 
     def request(self, method, url,
             params=None, data=None, headers=None, cookies=None, files=None,
@@ -443,7 +444,10 @@ class Session:
         if params:
             if isinstance(params, Mapping):
                 url = url + '?' + urlencode(params)
-        self.set_headers(request, headers)
+        headers = self.set_headers(request, headers)
+        if ('range' in headers) or ('accept' in headers and 'application/octet-stream' in headers['accept']):
+            request.overrideMimeType('text/plain; charset=x-user-defined')
+            request.responseIsBinary = True
         if data:
             if isinstance(data, Mapping):
                 data = Blob.new([json_module.dumps(data)], {
