@@ -380,10 +380,11 @@ class Session:
         if isinstance(headers, Mapping):
             for header, value in headers.items():
                 request.setRequestHeader(header, value)
+            return request
         if isinstance(headers, Iterable):
             for header, value in headers:
                 request.setRequestHeader(header, value)
-        return request
+            return request
 
     def request(self, method, url,
             params=None, data=None, headers=None, cookies=None, files=None,
