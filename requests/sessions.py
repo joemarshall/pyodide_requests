@@ -433,6 +433,7 @@ class Session:
         request = XMLHttpRequest.new()
         request.responseIsBinary = False
         if stream:
+            # we ask the browser not to worry about the character set, keeping the raw bytes intact
             request.overrideMimeType('text/plain; charset=x-user-defined')
             request.responseIsBinary = True
         # Send cookies that might be set in the browser already

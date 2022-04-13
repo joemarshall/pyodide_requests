@@ -600,6 +600,7 @@ class Response(object):
 
     def __init__(self, request):
         if request.responseIsBinary:
+            # bring everything outside the range of a single byte within this range
             self.raw = bytes(ord(byte) & 0xff for byte in request.response)
         else:
             self.text = str(request.response)
