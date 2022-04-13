@@ -12,7 +12,7 @@ import datetime
 # Implicit import within threads may cause LookupError when standard library is in a ZIP,
 # such as in Embedded Python. See https://github.com/psf/requests/issues/3578.
 from email.parser import Parser
-from io import UnsupportedOperation, BytesIO
+from io import UnsupportedOperation, BytesIO, StringIO
 
 from urllib3.exceptions import (
     LocationParseError, ProtocolError, DecodeError, ReadTimeoutError)
@@ -604,6 +604,7 @@ class Response(object):
             self.raw = BytesIO(bytes(ord(byte) & 0xff for byte in request.response))
         else:
             self.text = str(request.response)
+            self.raw = StringIO(str(request.response))
         self.status_code = request.status
         self.headers = CaseInsensitiveDict(Parser().parsestr(request.getAllResponseHeaders(), headersonly=True))
         # Strip the transfer-encoding header, since Python logic relying on checking this header will have a bad time
