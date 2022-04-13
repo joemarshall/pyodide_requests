@@ -16,7 +16,7 @@ from collections import OrderedDict, Iterable
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from js import XMLHttpRequest, eval
+from js import XMLHttpRequest
 
 try:
     from js import Blob
@@ -431,6 +431,7 @@ class Session:
         :rtype: requests.Response
         """
         request = XMLHttpRequest.new()
+        request.responseIsBinary = False
         if stream:
             request.overrideMimeType('text/plain; charset=x-user-defined')
             request.responseIsBinary = True

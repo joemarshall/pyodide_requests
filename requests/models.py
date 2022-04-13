@@ -12,6 +12,7 @@ import datetime
 # Implicit import within threads may cause LookupError when standard library is in a ZIP,
 # such as in Embedded Python. See https://github.com/psf/requests/issues/3578.
 from email.parser import Parser
+import js.eval
 from io import UnsupportedOperation, BytesIO, StringIO
 
 from urllib3.exceptions import (
@@ -600,7 +601,7 @@ class Response(object):
 
     def __init__(self, request):
         if request.responseIsBinary:
-            self.raw = bytes(eval(
+            self.raw = bytes(js.eval(
                 "function str2ab(str) { "
                 "  var buf = new ArrayBuffer(str.length); "
                 "  var bufView = new Uint8Array(buf); "
