@@ -12,7 +12,8 @@ import os
 import sys
 import time
 import warnings
-from collections import OrderedDict, Iterable
+from collections import OrderedDict
+from collections.abc import Iterable
 from datetime import timedelta
 from urllib.parse import urlencode
 
