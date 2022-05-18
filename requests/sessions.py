@@ -433,7 +433,6 @@ class Session:
         :rtype: requests.Response
         """
         
-        body""
         if params:
             if isinstance(params, Mapping):
                 url = url + '?' + urlencode(params)

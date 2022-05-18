@@ -612,7 +612,7 @@ class Response(object):
     def __init__(self, strm,streaming=True):
         self.raw=strm
         headers=get_headers()
-        if !streaming:
+        if not streaming:
             for buffer in iter_content():
                 if not strm.binary:
                     self.text += str(buffer)
