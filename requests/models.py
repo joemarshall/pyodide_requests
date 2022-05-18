@@ -587,6 +587,17 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         for event in hooks:
             self.register_hook(event, hooks[event])
 
+class RawStreamWrapper:
+    def __init__(self,wrapped):
+        self.wrapped=wrapped
+
+    def read(self,*args,**argv):
+        print("Ignoring:",argv)
+        return self.wrapped.read(*args)
+
+    def __getattr__(self, attr):
+        return getattr(self.wrapped, attr)
+
 
 class Response(object):
     """The :class:`Response <Response>` object, which contains a
@@ -598,15 +609,16 @@ class Response(object):
         'encoding', 'reason', 'cookies', 'elapsed', 'request'
     ]
 
-    def __init__(self, request):
-        if request.responseIsBinary:
-            # bring everything outside the range of a single byte within this range
-            self.raw = BytesIO(bytes(ord(byte) & 0xff for byte in request.response))
-        else:
-            self.text = str(request.response)
-            self.raw = StringIO(str(request.response))
-        self.status_code = request.status
-        self.headers = CaseInsensitiveDict(Parser().parsestr(request.getAllResponseHeaders(), headersonly=True))
+    def __init__(self, strm,streaming=True):
+        self.raw=strm
+        headers=get_headers()
+        if !streaming:
+            for buffer in iter_content():
+                if not strm.binary:
+                    self.text += str(buffer)
+                self.content+=buffer
+        self.status_code = 200 #headers["status"]
+        self.headers = CaseInsensitiveDict(headers)
         # Strip the transfer-encoding header, since Python logic relying on checking this header will have a bad time
         if 'transfer-encoding' in self.headers:
             del self.headers['transfer-encoding']

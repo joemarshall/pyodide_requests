@@ -40,9 +40,11 @@ is at <https://requests.readthedocs.io>.
 :license: Apache 2.0, see LICENSE for more details.
 """
 
+
 import urllib3
 import warnings
 from .exceptions import RequestsDependencyWarning
+
 
 try:
     from charset_normalizer import __version__ as charset_normalizer_version

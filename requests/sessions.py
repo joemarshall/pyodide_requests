@@ -17,8 +17,7 @@ from collections.abc import Iterable
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from js import XMLHttpRequest
-
+from serviceworker import *
 try:
     from js import Blob
 except:
@@ -433,44 +432,30 @@ class Session:
             If Tuple, ('cert', 'key') pair.
         :rtype: requests.Response
         """
-        request = XMLHttpRequest.new()
-        request.responseIsBinary = False
-        if stream:
-            # we ask the browser not to worry about the character set, keeping the raw bytes intact
-            request.overrideMimeType('text/plain; charset=x-user-defined')
-            request.responseIsBinary = True
-        # Send cookies that might be set in the browser already
-        request.withCredentials = True
-        request.open(method.upper(), url, False)
+        
+        body""
         if params:
             if isinstance(params, Mapping):
                 url = url + '?' + urlencode(params)
-        headers = self.set_headers(request, headers)
-        if ('range' in headers) or ('accept' in headers and 'application/octet-stream' in headers['accept']):
-            request.overrideMimeType('text/plain; charset=x-user-defined')
-            request.responseIsBinary = True
         if data:
-            if isinstance(data, Mapping):
-                data = Blob.new([json_module.dumps(data)], {
-                    'type': 'application/json',
-                })
+            if isinstance(data, dict):
+                body = json_module.dumps(data)
+            elif isinstance(data,string):
+                body=data
             else:
                 warnings.warn('This type of input to the data parameter of Pyodide requests is not (yet) supported')
         if json:
-            if isinstance(json, Mapping):
-                data = Blob.new([json_module.dumps(json)], {
-                    'type': 'application/json',
-                })
+            if isinstance(json, dict):
+                body = json_module.dumps(data)
+            elif isinstance(json,string):
+                body=data
             else:
                 warnings.warn('This type of input to the json parameter of Pyodide requests is not (yet) supported')
         if verify is not None or cert or not allow_redirects or proxies or auth or hooks or files or cookies:
             warnings.warn('The Pyodide version of requests does not support the following parameters (yet): '
                           'verify, cert, allow_redirects, proxies, auth, hooks, files and cookies')
-        if data:
-            request.send(data)
-        else:
-            request.send()
-        return Response(request)
+        strm=FetchStream(method.upper(),url,headers,data=body)
+        return Response(strm)
 
     def get(self, url, **kwargs):
         r"""Sends a GET request. Returns :class:`Response` object.
