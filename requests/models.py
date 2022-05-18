@@ -587,18 +587,6 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         for event in hooks:
             self.register_hook(event, hooks[event])
 
-class RawStreamWrapper:
-    def __init__(self,wrapped):
-        self.wrapped=wrapped
-
-    def read(self,*args,**argv):
-        print("Ignoring:",argv)
-        return self.wrapped.read(*args)
-
-    def __getattr__(self, attr):
-        return getattr(self.wrapped, attr)
-
-
 class Response(object):
     """The :class:`Response <Response>` object, which contains a
     server's response to an HTTP request.
@@ -612,11 +600,7 @@ class Response(object):
     def __init__(self, strm,streaming=True):
         self.raw=strm
         headers=strm.get_headers()
-        if not streaming:
-            for buffer in self.iter_content():
-                if not strm.binary:
-                    self.text += str(buffer)
-                self.content+=buffer
+        print(headers)
         self.status_code = 200 #headers["status"]
         self.headers = CaseInsensitiveDict(headers)
         # Strip the transfer-encoding header, since Python logic relying on checking this header will have a bad time
@@ -625,6 +609,11 @@ class Response(object):
         self._content = False
         self._content_consumed = False
         self._next = None
+        if not streaming:
+            for buffer in self.iter_content():
+                if not strm.binary:
+                    self.text += str(buffer)
+                self.content+=buffer
 
         #: Final URL location of Response.
         self.url = None
