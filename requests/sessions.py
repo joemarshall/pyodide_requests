@@ -17,7 +17,7 @@ from collections.abc import Iterable
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from serviceworker import *
+from .serviceworker import *
 try:
     from js import Blob
 except:
