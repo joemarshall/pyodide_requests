@@ -48,7 +48,7 @@ _worker=Worker()
 class FetchStream:
     def __init__(self,method,url,headers,data,force_binary):
         self.fetch_id,self.headers,self.binary=_worker.start_chunked_fetch(method,url,req_headers=headers,req_data=data)
-        if self.force_binary:
+        if force_binary:
             self.binary=True
         self.buffer=b"" if self.binary else ""
         self.finished=False

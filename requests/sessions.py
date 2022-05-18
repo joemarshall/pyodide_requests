@@ -454,12 +454,14 @@ class Session:
             warnings.warn('The Pyodide version of requests does not support the following parameters (yet): '
                           'verify, cert, allow_redirects, proxies, auth, hooks, files and cookies')
         if stream:
-            force_+binary=True
-        if headers=None:
+            force_binary=True
+        if headers==None:
             headers={}
         for header, value in self.headers.items():
-            if !header in headers:
+            if not header in headers:
+                print(header,value)
                 headers[header]=value
+        print(headers)
         strm=FetchStream(method.upper(),url,headers,data=body,force_binary=force_binary)
         return Response(strm,stream)
 
