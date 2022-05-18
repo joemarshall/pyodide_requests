@@ -432,7 +432,7 @@ class Session:
             If Tuple, ('cert', 'key') pair.
         :rtype: requests.Response
         """
-        
+        body=""
         if params:
             if isinstance(params, Mapping):
                 url = url + '?' + urlencode(params)
@@ -454,7 +454,7 @@ class Session:
             warnings.warn('The Pyodide version of requests does not support the following parameters (yet): '
                           'verify, cert, allow_redirects, proxies, auth, hooks, files and cookies')
         strm=FetchStream(method.upper(),url,headers,data=body)
-        return Response(strm)
+        return Response(strm,stream)
 
     def get(self, url, **kwargs):
         r"""Sends a GET request. Returns :class:`Response` object.

@@ -5,7 +5,7 @@ class Worker:
     def __init__(self):
         pass
 
-    def start_chunked_fetch(self,method,url,req_headers,binary=False):
+    def start_chunked_fetch(self,method,url,req_headers,req_data):
         """
             Fetch headers and chunk ID of chunked fetch
         """
@@ -38,18 +38,20 @@ class Worker:
             response=getattr(xhr,"response")        
         return response
 
-#_worker=Worker()
+_worker=Worker()
+
+
 #fetch_id,headers,binary=_worker.start_chunked_fetch("GET","/files/tmp.html")
 #print(headers)
 #print(_worker.fetch_next_chunk(fetch_id))
 
 class FetchStream:
-    def __init__(self,method,url,headers):
-        self.fetch_id,self.headers,self.binary=_worker.start_chunked_fetch(method,url,headers)
+    def __init__(self,method,url,headers,data):
+        self.fetch_id,self.headers,self.binary=_worker.start_chunked_fetch(method,url,headers,req_data=data)
         self.buffer=b"" if self.binary else ""
         self.finished=False
 
-    def headers(self):
+    def get_headers(self):
         return self.headers        
         
     def read(self,count,**ignored):
