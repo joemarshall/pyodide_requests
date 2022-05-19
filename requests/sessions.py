@@ -453,6 +453,7 @@ class Session:
         if verify is not None or cert or not allow_redirects or proxies or auth or hooks or files or cookies:
             warnings.warn('The Pyodide version of requests does not support the following parameters (yet): '
                           'verify, cert, allow_redirects, proxies, auth, hooks, files and cookies')
+        force_binary=False
         if stream:
             force_binary=True
         if headers==None:
