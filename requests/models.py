@@ -35,7 +35,7 @@ from .hooks import default_hooks
 from .status_codes import codes
 from .structures import CaseInsensitiveDict
 from .utils import (
-    guess_filename, get_auth_from_url, requote_uri,
+    guess_filename, get_auth_from_url, requote_uri,get_encoding_from_headers,
     to_key_val_list, parse_header_links,
     super_len, check_header_validity, iter_slices, stream_decode_response_unicode)
 
@@ -600,8 +600,8 @@ class Response(object):
     def __init__(self, strm,streaming=True):
         self.raw=strm
         headers=strm.get_headers()
-        print(headers)
-        self.status_code = 200 #headers["status"]
+        self.status_code = strm.status
+        self.reason=strm.reason
         self.headers = CaseInsensitiveDict(headers)
         # Strip the transfer-encoding header, since Python logic relying on checking this header will have a bad time
         if 'transfer-encoding' in self.headers:
@@ -610,10 +610,8 @@ class Response(object):
         self._content_consumed = False
         self._next = None
         if not streaming:
-            for buffer in self.iter_content():
-                if not strm.binary:
-                    self.text += str(buffer)
-                self.content+=buffer
+            # load the content (the below is a property getter that does this)
+            self.content
 
         #: Final URL location of Response.
         self.url = None
@@ -643,6 +641,28 @@ class Response(object):
         #: The :class:`PreparedRequest <PreparedRequest>` object to which this
         #: is a response.
         self.request = None
+
+    @property
+    def text(self):
+        if not self.content:
+            return ""
+        if self.encoding==None:
+            self.encoding=get_encoding_from_headers(self.headers)
+        # Fallback to auto-detected encoding.
+        if self.encoding is None:
+            self.encoding = self.apparent_encoding
+        # Decode unicode from given encoding.
+        try:
+            txt = str(self.content, self.encoding, errors="replace")
+        except (LookupError, TypeError):
+            # A LookupError is raised if the encoding was not found which could
+            # indicate a misspelling or similar mistake.
+            #
+            # A TypeError can be raised if encoding is None
+            #
+            # So we try blindly encoding.
+            txt = str(self.content, errors="replace")        
+        return txt
 
     def __enter__(self):
         return self

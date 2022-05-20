@@ -18,11 +18,15 @@ class Worker:
         headers=json.loads(response)
         id=headers["requests-fetch-id"]
         del headers["requests-fetch-id"]
+        status=headers["requests-fetch-status"]
+        del headers["requests-fetch-status"]
+        reason=headers["requests-fetch-status-text"]
+        del headers["requests-fetch-status-text"]
         if not "content-type" in headers or headers["content-type"].startswith("text"):
             binary=False
         else:
             binary=True                                                
-        return id,headers,binary
+        return id,headers,status,reason,binary
 
     def fetch_next_chunk(self,fetch_id,binary=False):
         xhr=js.XMLHttpRequest.new()
@@ -47,11 +51,11 @@ _worker=Worker()
 
 class FetchStream:
     def __init__(self,method,url,headers,data,force_binary):
-        self.fetch_id,self.headers,self.binary=_worker.start_chunked_fetch(method,url,req_headers=headers,req_data=data)
+        self.fetch_id,self.headers,self.status,self.reason,self.binary=_worker.start_chunked_fetch(method,url,req_headers=headers,req_data=data)
         if force_binary:
             self.binary=True
         self.buffer=b"" if self.binary else ""
-        self.finished=False
+        self.finished=False if self.status//100==2 else True
 
     def get_headers(self):
         return self.headers        
