@@ -2,7 +2,13 @@
 
 This is a port of requests to pyodide. It uses XMLHttpRequest to do requests.
 
-It supports an optional web worker, which is included in fetch_worker.js. This allows background fetching of files in a browser worker thread, and provides progress reports to the python requests module. This allows you to implement e.g. progress bars. This doesn't work in incognito mode - in incognito mode you just get the final response once it is downloaded.
+It supports an optional web service worker, which is included in fetch_service.js. This allows background fetching of files in a browser worker thread, and provides progress reports to the python requests module. This allows you to implement e.g. progress bars. This doesn't work in incognito mode - in incognito mode you just get the final response once it is downloaded.
+
+To install the service worker just include the js in a webpage. Note, it will only affect pages equal to or below it in the web page hierarchy. e.g. if you want it to work in the middle directory of a site with folders like so: `http://top/**middle**/bottom' it must be in either `top` or `middle`, or `/`
+
+
+Requests docs below
+--- 
 
 **Requests** is a simple, yet elegant, HTTP library.
 
