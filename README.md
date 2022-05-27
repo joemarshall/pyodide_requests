@@ -1,4 +1,8 @@
-# Requests
+# Requests for pyodide
+
+This is a port of requests to pyodide. It uses XMLHttpRequest to do requests.
+
+It supports an optional web worker, which is included in fetch_worker.js. This allows background fetching of files in a browser worker thread, and provides progress reports to the python requests module. This allows you to implement e.g. progress bars. This doesn't work in incognito mode - in incognito mode you just get the final response once it is downloaded.
 
 **Requests** is a simple, yet elegant, HTTP library.
 
