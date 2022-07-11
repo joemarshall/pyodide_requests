@@ -6,7 +6,10 @@ class Worker:
         self.direct_requests={}
         self.direct_requests_id=100000
         self.enable_direct_requests=False
-        self.base_url=js.indexURL
+        try:
+            self.base_url=js.indexURL
+        except:
+            self.base_url=""
         
     def fetch_direct(self,method,url,req_headers,req_data):
         xhr=js.XMLHttpRequest.new()
